@@ -12,10 +12,17 @@ export async function GET(request: NextRequest) {
   console.log("[v0] Proxying image:", url);
 
   try {
+    const host = new URL(url).hostname;
+    const referer = host.includes("donmai.us")
+      ? "https://danbooru.donmai.us/"
+      : host.includes("mangadex") || host.includes("uploads.mangadex")
+      ? "https://mangadex.org/"
+      : `https://${host}/`;
+
     const response = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Referer: "https://mangadex.org/",
+        Referer: referer,
         Accept: "image/webp,image/apng,image/*,*/*;q=0.8",
       },
     });

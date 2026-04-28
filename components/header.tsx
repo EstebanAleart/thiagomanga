@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Home, Heart, Newspaper } from "lucide-react";
+import { BookOpen, Home, Heart, Newspaper, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -41,6 +41,13 @@ export function Header() {
               <span className="hidden sm:inline">Enciclopedia</span>
             </Link>
           </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/comick" className="flex items-center gap-2">
+              <Library className="h-4 w-4" />
+              <span className="hidden sm:inline">ComicK</span>
+            </Link>
+          </Button>
+
           <Button variant="ghost" size="sm" asChild>
             <Link href="/favorites" className="flex items-center gap-2 relative">
               <Heart className="h-4 w-4" />
