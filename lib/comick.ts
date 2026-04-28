@@ -1,4 +1,4 @@
-const COMICK_API = "https://api.comick.fun";
+const COMICK_API = "https://api.comick.io";
 
 export interface ComickManga {
   id: number;
@@ -53,12 +53,21 @@ async function comickFetch<T>(path: string, params: Record<string, string> = {})
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   try {
     const res = await fetch(url.toString(), {
-      headers: { "User-Agent": "Tachiyomi/1.0" },
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+        "Referer": "https://comick.io/",
+        "Origin": "https://comick.io",
+      },
       next: { revalidate: 300 },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`[comick] ${res.status} ${res.statusText} — ${url.toString()}`);
+      return null;
+    }
     return res.json();
-  } catch {
+  } catch (e) {
+    console.error(`[comick] fetch error — ${url.toString()}`, e);
     return null;
   }
 }
