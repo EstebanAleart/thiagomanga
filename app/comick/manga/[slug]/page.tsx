@@ -37,13 +37,16 @@ export default function ComickMangaPage({ params }: Props) {
   const [showAll, setShowAll] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
 
-  const { data: manga, isLoading: mangaLoading } = useSWR<ComickMangaDetail>(
-    `/api/comick/manga/${slug}`,
+  const { data: mangaRaw, isLoading: mangaLoading } = useSWR<{ comic: ComickMangaDetail; authors: ComickMangaDetail["authors"]; artists: ComickMangaDetail["artists"]; langList: string[] }>(
+    `https://api.comick.io/comic/${slug}`,
     fetcher
   );
+  const manga: ComickMangaDetail | undefined = mangaRaw?.comic
+    ? { ...mangaRaw.comic, authors: mangaRaw.authors ?? [], artists: mangaRaw.artists ?? [], langList: mangaRaw.langList ?? [] }
+    : undefined;
 
   const { data: chaptersData, isLoading: chaptersLoading } = useSWR<{ chapters: ComickChapter[]; total: number }>(
-    manga ? `/api/comick/manga/${slug}/chapters?lang=${selectedLang}` : null,
+    manga ? `https://api.comick.io/comic/${slug}/chapters?lang=${selectedLang}&limit=300` : null,
     fetcher
   );
 

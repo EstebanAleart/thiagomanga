@@ -19,7 +19,7 @@ export default function ComickPage() {
   const [page, setPage] = useState(1);
 
   const { data: results, isLoading } = useSWR<ComickManga[]>(
-    `/api/comick/search?q=${encodeURIComponent(submitted)}&page=${page}&limit=24`,
+    `https://api.comick.io/v1.0/search/?q=${encodeURIComponent(submitted)}&limit=24&page=${page}`,
     fetcher
   );
 

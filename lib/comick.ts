@@ -55,9 +55,9 @@ async function comickFetch<T>(path: string, params: Record<string, string> = {})
     const res = await fetch(url.toString(), {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-        "Referer": "https://comick.io/",
-        "Origin": "https://comick.io",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
       },
       next: { revalidate: 300 },
     });
