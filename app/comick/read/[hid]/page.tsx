@@ -82,16 +82,13 @@ export default function ComickReaderPage({ params }: Props) {
     return () => observer.disconnect();
   }, [mode, pageRefs.current.length]);
 
-  const { data: chapterRaw, isLoading, error } = useSWR<{ chapter: { images: { url: string }[] } }>(
-    `https://api.comick.io/chapter/${hid}`,
+  const { data, isLoading, error } = useSWR<{ pages: string[]; total: number }>(
+    `/api/comick/chapter/${hid}`,
     fetcher
   );
-  const data = chapterRaw
-    ? { pages: chapterRaw.chapter?.images?.map((i) => i.url) ?? [], total: chapterRaw.chapter?.images?.length ?? 0 }
-    : undefined;
 
   const { data: chaptersData } = useSWR<{ chapters: ComickChapter[]; total: number }>(
-    slug ? `https://api.comick.io/comic/${slug}/chapters?lang=${lang}&limit=300` : null,
+    slug ? `/api/comick/manga/${slug}/chapters?lang=${lang}` : null,
     fetcher
   );
 
