@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchAnimeStreaming, getTopAiring, getMostPopular, getRecentlyUpdated } from "@/lib/consumet";
+import { searchAnimeStreaming, getNewReleases, getRecentlyUpdated, getTVAnime } from "@/lib/consumet";
 
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
@@ -14,14 +14,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Browse by category
-    const cat = sp.get("cat") || "airing";
+    const cat = sp.get("cat") || "new";
     switch (cat) {
-      case "popular":
-        return NextResponse.json(await getMostPopular(page));
       case "recent":
         return NextResponse.json(await getRecentlyUpdated(page));
+      case "tv":
+        return NextResponse.json(await getTVAnime(page));
       default:
-        return NextResponse.json(await getTopAiring(page));
+        return NextResponse.json(await getNewReleases(page));
     }
   } catch (error) {
     console.error("Streaming search error:", error);

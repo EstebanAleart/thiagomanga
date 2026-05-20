@@ -21,18 +21,18 @@ interface StreamResult {
   hasDub: boolean | null;
 }
 
-type Category = "airing" | "popular" | "recent";
+type Category = "new" | "recent" | "tv";
 
 const CATEGORIES: { key: Category; label: string; icon: typeof Flame }[] = [
-  { key: "airing", label: "En emisión", icon: Flame },
-  { key: "popular", label: "Populares", icon: TrendingUp },
-  { key: "recent", label: "Recientes", icon: Clock },
+  { key: "new", label: "Nuevos", icon: Flame },
+  { key: "recent", label: "Actualizados", icon: Clock },
+  { key: "tv", label: "Series TV", icon: TrendingUp },
 ];
 
 export default function WatchPage() {
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<Category>("airing");
+  const [category, setCategory] = useState<Category>("new");
 
   // Search results
   const { data: searchData, isLoading: searchLoading } = useSWR<{ results: StreamResult[]; hasNextPage: boolean }>(

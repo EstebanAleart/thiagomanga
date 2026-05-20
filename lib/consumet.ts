@@ -1,14 +1,33 @@
 import { ANIME, SubOrSub } from "@consumet/extensions";
 
-const hianime = new ANIME.Hianime();
+const provider = new ANIME.AnimeKai();
+
+function mapResults(results: any) {
+  return (results.results || []).map((r: any) => ({
+    id: r.id as string,
+    title: typeof r.title === "string" ? r.title : r.title?.english || r.title?.romaji || "",
+    image: r.image || null,
+    type: r.type || null,
+    releaseDate: r.releaseDate || null,
+    hasSub: r.hasSub ?? r.isSubbed ?? null,
+    hasDub: r.hasDub ?? r.isDubbed ?? null,
+  }));
+}
+
+function wrapBrowse(fn: (page: number) => Promise<any>) {
+  return async (page = 1) => {
+    const results = await fn(page);
+    return { results: mapResults(results), hasNextPage: results.hasNextPage ?? false };
+  };
+}
 
 export async function searchAnimeStreaming(query: string, page = 1) {
-  const results = await hianime.search(query, page);
+  const results = await provider.search(query, page);
   return { results: mapResults(results), hasNextPage: results.hasNextPage ?? false };
 }
 
 export async function getAnimeEpisodes(animeId: string) {
-  const info = await hianime.fetchAnimeInfo(animeId);
+  const info = await provider.fetchAnimeInfo(animeId);
   return {
     id: info.id,
     title: typeof info.title === "string" ? info.title : info.title?.english || info.title?.romaji || "",
@@ -26,36 +45,18 @@ export async function getAnimeEpisodes(animeId: string) {
   };
 }
 
-function mapResults(results: any) {
-  return (results.results || []).map((r: any) => ({
-    id: r.id as string,
-    title: typeof r.title === "string" ? r.title : r.title?.english || r.title?.romaji || "",
-    image: r.image || null,
-    type: r.type || null,
-    releaseDate: r.releaseDate || null,
-    hasSub: r.hasSub ?? null,
-    hasDub: r.hasDub ?? null,
-  }));
-}
+export const getNewReleases = wrapBrowse((p) => provider.fetchNewReleases(p));
+export const getRecentlyUpdated = wrapBrowse((p) => provider.fetchRecentlyUpdated(p));
+export const getTVAnime = wrapBrowse((p) => provider.fetchTV(p));
 
-export async function getTopAiring(page = 1) {
-  const results = await hianime.fetchTopAiring(page);
-  return { results: mapResults(results), hasNextPage: results.hasNextPage ?? false };
-}
-
-export async function getMostPopular(page = 1) {
-  const results = await hianime.fetchMostPopular(page);
-  return { results: mapResults(results), hasNextPage: results.hasNextPage ?? false };
-}
-
-export async function getRecentlyUpdated(page = 1) {
-  const results = await hianime.fetchRecentlyUpdated(page);
-  return { results: mapResults(results), hasNextPage: results.hasNextPage ?? false };
+export async function getSpotlight() {
+  const results = await provider.fetchSpotlight();
+  return { results: mapResults(results), hasNextPage: false };
 }
 
 export async function getEpisodeSources(episodeId: string, subOrDub: "sub" | "dub" = "sub") {
   const mode = subOrDub === "dub" ? SubOrSub.DUB : SubOrSub.SUB;
-  const sources = await hianime.fetchEpisodeSources(episodeId, undefined, mode);
+  const sources = await provider.fetchEpisodeSources(episodeId, undefined, mode);
   return {
     sources: sources.sources.map((s) => ({
       url: s.url,
