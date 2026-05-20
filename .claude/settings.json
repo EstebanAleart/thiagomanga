@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:mangahook-api.vercel.app)",
+      "WebFetch(domain:dev.to)",
+      "Bash(git clone:*)",
+      "WebFetch(domain:api.mangaupdates.com)",
+      "Bash(git log:*)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm info:*)",
+      "Bash(taskkill:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\esteb\\Desktop\\proyectos\\thiagomanga\\app\\anime",
+      "C:\\Users\\esteb\\Desktop\\proyectos\\thiagomanga\\app\\api\\streaming",
+      "C:\\Users\\esteb\\Desktop\\proyectos\\thiagomanga\\app\\watch\\[animeId]"
+    ]
+  }
+}

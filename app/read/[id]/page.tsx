@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import {
   ChevronLeft, ChevronRight, Home, Maximize2, Minimize2,
-  List, Settings2, X, AlignJustify, BookOpen,
+  List, Settings2, X, AlignJustify, BookOpen, Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -15,6 +15,9 @@ import type { Chapter } from "@/lib/mangadex";
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 type ReadingMode = "page" | "scroll";
+
+const LANG_FLAGS: Record<string, string> = { "es-la": "🇦🇷", es: "🇪🇸", en: "🇬🇧", "pt-br": "🇧🇷", ja: "🇯🇵", ko: "🇰🇷", zh: "🇨🇳", fr: "🇫🇷", de: "🇩🇪", it: "🇮🇹", ru: "🇷🇺" };
+const LANG_LABELS: Record<string, string> = { "es-la": "Español (Latam)", es: "Español (España)", en: "English", "pt-br": "Português", ja: "日本語", ko: "한국어", zh: "中文", fr: "Français", de: "Deutsch", it: "Italiano", ru: "Русский" };
 
 interface ReaderPageProps {
   params: Promise<{ id: string }>;
@@ -25,7 +28,12 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const mangaId = searchParams.get("mangaId");
+  const langParam = searchParams.get("lang");
 
+  const [currentLang, setCurrentLang] = useState<string>(
+    langParam || (typeof window !== "undefined" ? localStorage.getItem("preferred-lang") : null) || "en"
+  );
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
@@ -105,11 +113,26 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     fetcher
   );
 
-  const chapters = chaptersData?.data || [];
+  const allChapters = chaptersData?.data || [];
+  // Current chapter from the full list (to get its chapter number + language)
+  const currentChapter = allChapters.find((c) => c.id === id) || null;
+
+  // Chapters filtered by current language for prev/next navigation
+  const chapters = allChapters.filter((c) => c.language === currentLang);
   const currentChapterIdx = chapters.findIndex((c) => c.id === id);
   const prevChapter = currentChapterIdx > 0 ? chapters[currentChapterIdx - 1] : null;
   const nextChapter = currentChapterIdx < chapters.length - 1 ? chapters[currentChapterIdx + 1] : null;
-  const currentChapter = chapters[currentChapterIdx];
+
+  // Find alternative languages for the same chapter number
+  const altLangChapters = currentChapter
+    ? allChapters.filter(
+        (c) => c.chapter === currentChapter.chapter && c.id !== id && c.language && c.language !== currentLang
+      )
+    : [];
+  const availableLangs = [
+    ...(currentChapter?.language ? [{ lang: currentChapter.language, chapterId: id, active: true }] : []),
+    ...altLangChapters.map((c) => ({ lang: c.language!, chapterId: c.id, active: false })),
+  ];
 
   const goToPage = useCallback((page: number) => {
     setImageLoading(true);
@@ -117,22 +140,26 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     setCurrentPage(page);
   }, []);
 
+  const buildReadUrl = useCallback((chapterId: string, lang?: string) => {
+    return `/read/${chapterId}?mangaId=${mangaId}&lang=${lang || currentLang}`;
+  }, [mangaId, currentLang]);
+
   const goToPrev = useCallback(() => {
     if (currentPage > 0) goToPage(currentPage - 1);
-    else if (prevChapter) router.push(`/read/${prevChapter.id}?mangaId=${mangaId}`);
-  }, [currentPage, prevChapter, mangaId, router, goToPage]);
+    else if (prevChapter) router.push(buildReadUrl(prevChapter.id));
+  }, [currentPage, prevChapter, router, goToPage, buildReadUrl]);
 
   const goToNext = useCallback(() => {
     if (data && currentPage < data.pages.length - 1) goToPage(currentPage + 1);
-    else if (nextChapter) router.push(`/read/${nextChapter.id}?mangaId=${mangaId}`);
-  }, [currentPage, data, nextChapter, mangaId, router, goToPage]);
+    else if (nextChapter) router.push(buildReadUrl(nextChapter.id));
+  }, [currentPage, data, nextChapter, router, goToPage, buildReadUrl]);
 
   useEffect(() => {
     if (mode !== "page") return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") goToPrev();
       else if (e.key === "ArrowRight") goToNext();
-      else if (e.key === "Escape") { setIsFullscreen(false); setShowChapterList(false); setShowSettings(false); }
+      else if (e.key === "Escape") { setIsFullscreen(false); setShowChapterList(false); setShowSettings(false); setShowLangPicker(false); }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -200,6 +227,22 @@ export default function ReaderPage({ params }: ReaderPageProps) {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            {/* Language picker */}
+            {availableLangs.length > 1 && (
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setShowLangPicker(!showLangPicker); setShowChapterList(false); setShowSettings(false); }}
+                  className="text-white hover:bg-white/10"
+                  title="Idioma"
+                >
+                  <Globe className="h-4 w-4" />
+                  <span className="text-xs ml-1">{LANG_FLAGS[currentLang] || currentLang}</span>
+                </Button>
+              </div>
+            )}
+
             {/* Mode toggle — always visible */}
             <div className="flex items-center bg-white/10 rounded-md p-0.5 mr-1">
               <button
@@ -221,11 +264,11 @@ export default function ReaderPage({ params }: ReaderPageProps) {
             </div>
 
             {mangaId && (
-              <Button variant="ghost" size="sm" onClick={() => { setShowChapterList(!showChapterList); setShowSettings(false); }} className="text-white hover:bg-white/10" title="Capítulos">
+              <Button variant="ghost" size="sm" onClick={() => { setShowChapterList(!showChapterList); setShowSettings(false); setShowLangPicker(false); }} className="text-white hover:bg-white/10" title="Capítulos">
                 <List className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={() => { setShowSettings(!showSettings); setShowChapterList(false); }} className="text-white hover:bg-white/10" title="Ajustes">
+            <Button variant="ghost" size="sm" onClick={() => { setShowSettings(!showSettings); setShowChapterList(false); setShowLangPicker(false); }} className="text-white hover:bg-white/10" title="Ajustes">
               <Settings2 className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="text-white hover:bg-white/10">
@@ -246,10 +289,47 @@ export default function ReaderPage({ params }: ReaderPageProps) {
           </div>
           <div className="p-2 flex flex-col gap-1">
             {chapters.map((ch) => (
-              <Link key={ch.id} href={`/read/${ch.id}?mangaId=${mangaId}`} onClick={() => setShowChapterList(false)}
+              <Link key={ch.id} href={buildReadUrl(ch.id)} onClick={() => setShowChapterList(false)}
                 className={`px-3 py-2 rounded text-sm transition-colors ${ch.id === id ? "bg-primary text-primary-foreground" : "text-white/70 hover:bg-white/10"}`}>
                 Cap. {ch.chapter}{ch.title ? ` – ${ch.title}` : ""}
               </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Language picker panel */}
+      {showLangPicker && (
+        <div className="fixed top-14 right-0 z-40 w-56 bg-black/95 border border-white/10 rounded-bl-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-medium text-sm flex items-center gap-2">
+              <Globe className="h-4 w-4" /> Idioma
+            </span>
+            <Button variant="ghost" size="sm" onClick={() => setShowLangPicker(false)} className="text-white hover:bg-white/10 h-7 w-7 p-0">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex flex-col gap-1">
+            {availableLangs.map(({ lang, chapterId, active }) => (
+              <button
+                key={chapterId}
+                onClick={() => {
+                  if (!active) {
+                    setCurrentLang(lang);
+                    localStorage.setItem("preferred-lang", lang);
+                    setShowLangPicker(false);
+                    router.push(buildReadUrl(chapterId, lang));
+                  }
+                }}
+                className={`flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors text-left ${
+                  active
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "text-white/70 hover:bg-white/10"
+                }`}
+              >
+                <span>{LANG_FLAGS[lang] || "🌐"}</span>
+                <span>{LANG_LABELS[lang] || lang}</span>
+              </button>
             ))}
           </div>
         </div>
@@ -300,7 +380,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
             {nextChapter ? (
               <>
                 <p className="text-white/50 text-sm">Fin del capítulo</p>
-                <Button onClick={() => router.push(`/read/${nextChapter.id}?mangaId=${mangaId}`)}>
+                <Button onClick={() => router.push(buildReadUrl(nextChapter.id))}>
                   Siguiente capítulo → Cap. {nextChapter.chapter}
                 </Button>
               </>
@@ -351,7 +431,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
           {/* Bottom nav — page mode only */}
           <div className={`fixed bottom-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-sm border-t border-white/10 transition-opacity duration-300 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
             <div className="container flex items-center gap-3 h-16">
-              <Button variant="ghost" size="sm" onClick={() => prevChapter && router.push(`/read/${prevChapter.id}?mangaId=${mangaId}`)} disabled={!prevChapter} className="text-white hover:bg-white/10 disabled:opacity-20 shrink-0 text-xs px-2">
+              <Button variant="ghost" size="sm" onClick={() => prevChapter && router.push(buildReadUrl(prevChapter.id))} disabled={!prevChapter} className="text-white hover:bg-white/10 disabled:opacity-20 shrink-0 text-xs px-2">
                 <ChevronLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Cap. anterior</span>
               </Button>
@@ -372,7 +452,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 </Button>
               </div>
 
-              <Button variant="ghost" size="sm" onClick={() => nextChapter && router.push(`/read/${nextChapter.id}?mangaId=${mangaId}`)} disabled={!nextChapter} className="text-white hover:bg-white/10 disabled:opacity-20 shrink-0 text-xs px-2">
+              <Button variant="ghost" size="sm" onClick={() => nextChapter && router.push(buildReadUrl(nextChapter.id))} disabled={!nextChapter} className="text-white hover:bg-white/10 disabled:opacity-20 shrink-0 text-xs px-2">
                 <span className="hidden sm:inline">Cap. siguiente</span>
                 <ChevronRight className="h-4 w-4" />
               </Button>
