@@ -6,6 +6,7 @@ import useSWR from "swr";
 import {
   ArrowLeft, Heart, BookOpen, Calendar, Tag,
   ChevronDown, ChevronUp, Loader2, Star, Users, ExternalLink, Pen, BookMarked,
+  TrendingUp, Shield, Building2, ThumbsUp,
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Spinner } from "@/components/ui/spinner";
 import type { MangaSearchResult, Chapter } from "@/lib/mangadex";
 import type { AniListManga } from "@/lib/anilist";
 import { stripHtml } from "@/lib/anilist";
+import type { MUSeriesDetail } from "@/lib/mangaupdates";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -89,6 +91,11 @@ export default function MangaPage({ params }: MangaPageProps) {
 
   const { data: anilist } = useSWR<AniListManga | null>(
     manga ? `/api/anilist/manga?title=${encodeURIComponent(manga.title)}` : null,
+    fetcher
+  );
+
+  const { data: muData } = useSWR<MUSeriesDetail | null>(
+    manga ? `/api/mangaupdates/series?title=${encodeURIComponent(manga.title)}` : null,
     fetcher
   );
 
@@ -243,6 +250,19 @@ export default function MangaPage({ params }: MangaPageProps) {
                   #{anilist.popularity}
                 </Badge>
               )}
+              {muData?.bayesian_rating && (
+                <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30 flex items-center gap-1">
+                  <Star className="h-3 w-3 fill-current" />
+                  {muData.bayesian_rating.toFixed(2)}
+                  <span className="text-xs opacity-70">MU</span>
+                </Badge>
+              )}
+              {muData?.licensed && (
+                <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30 flex items-center gap-1">
+                  <Shield className="h-3 w-3" />
+                  Licenciado
+                </Badge>
+              )}
             </div>
 
             {/* Staff */}
@@ -346,6 +366,89 @@ export default function MangaPage({ params }: MangaPageProps) {
                         {RELATION_LABELS[relationType] || relationType} · {node.type === "ANIME" ? "Anime" : "Manga"}
                       </p>
                     </div>
+                  </a>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* MangaUpdates Ranking & Info */}
+        {muData?.rank && (
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Ranking (MangaUpdates)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4">
+                {[
+                  { label: "Semanal", value: muData.rank.position.week },
+                  { label: "Mensual", value: muData.rank.position.month },
+                  { label: "3 meses", value: muData.rank.position.three_months },
+                  { label: "6 meses", value: muData.rank.position.six_months },
+                  { label: "Anual", value: muData.rank.position.year },
+                ].map((r) => (
+                  <div key={r.label} className="text-center p-2 rounded-lg bg-muted/50">
+                    <p className="text-lg font-bold text-primary">#{r.value}</p>
+                    <p className="text-xs text-muted-foreground">{r.label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                <span>Leyendo: <strong className="text-foreground">{muData.rank.lists.reading.toLocaleString("es-AR")}</strong></span>
+                <span>Deseados: <strong className="text-foreground">{muData.rank.lists.wish.toLocaleString("es-AR")}</strong></span>
+                <span>Completos: <strong className="text-foreground">{muData.rank.lists.complete.toLocaleString("es-AR")}</strong></span>
+              </div>
+              {muData.publishers.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {muData.publishers.slice(0, 5).map((p, i) => (
+                    <Badge key={i} variant="outline" className="text-xs flex items-center gap-1">
+                      <Building2 className="h-3 w-3" />
+                      {p.publisher_name} ({p.type})
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* MangaUpdates Recommendations */}
+        {muData?.recommendations && muData.recommendations.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ThumbsUp className="h-4 w-4" />
+                Recomendados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {muData.recommendations.slice(0, 10).map((rec) => (
+                  <a
+                    key={rec.series_id}
+                    href={`https://www.mangaupdates.com/series.html?id=${rec.series_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                  >
+                    <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted mb-1">
+                      {rec.series_image?.url.thumb ? (
+                        <img
+                          src={`/api/proxy-image?url=${encodeURIComponent(rec.series_image.url.thumb)}`}
+                          alt={rec.series_name}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <BookOpen className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs font-medium line-clamp-2 text-foreground">{rec.series_name}</p>
                   </a>
                 ))}
               </div>
