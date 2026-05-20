@@ -4,18 +4,7 @@ const hianime = new ANIME.Hianime();
 
 export async function searchAnimeStreaming(query: string, page = 1) {
   const results = await hianime.search(query, page);
-  return {
-    results: results.results.map((r) => ({
-      id: r.id as string,
-      title: typeof r.title === "string" ? r.title : r.title?.english || r.title?.romaji || "",
-      image: r.image || null,
-      type: r.type || null,
-      releaseDate: r.releaseDate || null,
-      hasSub: (r as any).hasSub ?? null,
-      hasDub: (r as any).hasDub ?? null,
-    })),
-    hasNextPage: results.hasNextPage ?? false,
-  };
+  return { results: mapResults(results), hasNextPage: results.hasNextPage ?? false };
 }
 
 export async function getAnimeEpisodes(animeId: string) {
@@ -35,6 +24,33 @@ export async function getAnimeEpisodes(animeId: string) {
       isFiller: ep.isFiller ?? false,
     })),
   };
+}
+
+function mapResults(results: any) {
+  return (results.results || []).map((r: any) => ({
+    id: r.id as string,
+    title: typeof r.title === "string" ? r.title : r.title?.english || r.title?.romaji || "",
+    image: r.image || null,
+    type: r.type || null,
+    releaseDate: r.releaseDate || null,
+    hasSub: r.hasSub ?? null,
+    hasDub: r.hasDub ?? null,
+  }));
+}
+
+export async function getTopAiring(page = 1) {
+  const results = await hianime.fetchTopAiring(page);
+  return { results: mapResults(results), hasNextPage: results.hasNextPage ?? false };
+}
+
+export async function getMostPopular(page = 1) {
+  const results = await hianime.fetchMostPopular(page);
+  return { results: mapResults(results), hasNextPage: results.hasNextPage ?? false };
+}
+
+export async function getRecentlyUpdated(page = 1) {
+  const results = await hianime.fetchRecentlyUpdated(page);
+  return { results: mapResults(results), hasNextPage: results.hasNextPage ?? false };
 }
 
 export async function getEpisodeSources(episodeId: string, subOrDub: "sub" | "dub" = "sub") {

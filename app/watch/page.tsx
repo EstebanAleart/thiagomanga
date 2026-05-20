@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { Search, Play, Subtitles, Mic } from "lucide-react";
+import { Search, Play, Subtitles, Mic, Flame, TrendingUp, Clock, X } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -21,18 +21,42 @@ interface StreamResult {
   hasDub: boolean | null;
 }
 
+type Category = "airing" | "popular" | "recent";
+
+const CATEGORIES: { key: Category; label: string; icon: typeof Flame }[] = [
+  { key: "airing", label: "En emisión", icon: Flame },
+  { key: "popular", label: "Populares", icon: TrendingUp },
+  { key: "recent", label: "Recientes", icon: Clock },
+];
+
 export default function WatchPage() {
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<Category>("airing");
 
-  const { data, isLoading } = useSWR<{ results: StreamResult[]; hasNextPage: boolean }>(
+  // Search results
+  const { data: searchData, isLoading: searchLoading } = useSWR<{ results: StreamResult[]; hasNextPage: boolean }>(
     search ? `/api/streaming/search?q=${encodeURIComponent(search)}` : null,
     fetcher
   );
 
+  // Default browse (when not searching)
+  const { data: browseData, isLoading: browseLoading } = useSWR<{ results: StreamResult[]; hasNextPage: boolean }>(
+    !search ? `/api/streaming/search?cat=${category}` : null,
+    fetcher
+  );
+
+  const data = search ? searchData : browseData;
+  const isLoading = search ? searchLoading : browseLoading;
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) setSearch(query.trim());
+  };
+
+  const clearSearch = () => {
+    setQuery("");
+    setSearch("");
   };
 
   return (
@@ -44,7 +68,7 @@ export default function WatchPage() {
           Ver Anime
         </h1>
 
-        <form onSubmit={handleSearch} className="flex gap-2 mb-8 max-w-xl">
+        <form onSubmit={handleSearch} className="flex gap-2 mb-6 max-w-xl">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -55,7 +79,37 @@ export default function WatchPage() {
             />
           </div>
           <Button type="submit">Buscar</Button>
+          {search && (
+            <Button type="button" variant="ghost" size="icon" onClick={clearSearch} title="Limpiar búsqueda">
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </form>
+
+        {/* Category tabs (only when not searching) */}
+        {!search && (
+          <div className="flex gap-2 mb-6">
+            {CATEGORIES.map(({ key, label, icon: Icon }) => (
+              <Button
+                key={key}
+                variant={category === key ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCategory(key)}
+                className="flex items-center gap-2"
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Search active indicator */}
+        {search && (
+          <p className="text-sm text-muted-foreground mb-4">
+            Resultados para <strong className="text-foreground">&quot;{search}&quot;</strong>
+          </p>
+        )}
 
         {isLoading && (
           <div className="flex justify-center py-12">
@@ -67,7 +121,7 @@ export default function WatchPage() {
           <>
             {data.results.length === 0 ? (
               <p className="text-center text-muted-foreground py-12">
-                No se encontraron resultados para &quot;{search}&quot;
+                No se encontraron resultados
               </p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -114,14 +168,6 @@ export default function WatchPage() {
               </div>
             )}
           </>
-        )}
-
-        {!search && !isLoading && (
-          <div className="text-center py-20">
-            <Play className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground text-lg mb-2">Busca un anime para empezar a ver</p>
-            <p className="text-muted-foreground text-sm">Escribi el nombre y presiona buscar</p>
-          </div>
         )}
       </main>
     </div>
