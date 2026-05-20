@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Header } from "@/components/header";
-import { Heart, Trash2, BookOpen, Tv } from "lucide-react";
+import { Heart, Trash2, BookOpen, Tv, Share2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getShareUrl } from "@/lib/share";
 
 interface FavoriteManga {
   id: string;
@@ -30,6 +31,7 @@ export default function FavoritesPage() {
   const [tab, setTab] = useState<Tab>("manga");
   const [mangaFavs, setMangaFavs] = useState<FavoriteManga[]>([]);
   const [animeFavs, setAnimeFavs] = useState<FavoriteAnime[]>([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setMangaFavs(JSON.parse(localStorage.getItem("manga-favorites") || "[]"));
@@ -50,14 +52,34 @@ export default function FavoritesPage() {
 
   const totalCount = mangaFavs.length + animeFavs.length;
 
+  const handleShare = () => {
+    const url = getShareUrl();
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-8">
-        <h1 className="text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
-          <Heart className="h-8 w-8 text-primary fill-primary" />
-          Mis Favoritos
-        </h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <Heart className="h-8 w-8 text-primary fill-primary" />
+            Mis Favoritos
+          </h1>
+          {totalCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+              className="flex items-center gap-2"
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+              {copied ? "Link copiado" : "Compartir"}
+            </Button>
+          )}
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-8">
