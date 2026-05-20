@@ -1,4 +1,4 @@
-import { ANIME, SubOrSub } from "@consumet/extensions";
+import { ANIME } from "@consumet/extensions";
 
 const provider = new ANIME.AnimeKai();
 
@@ -54,20 +54,3 @@ export async function getSpotlight() {
   return { results: mapResults(results), hasNextPage: false };
 }
 
-export async function getEpisodeSources(episodeId: string, subOrDub: "sub" | "dub" = "sub") {
-  const mode = subOrDub === "dub" ? SubOrSub.DUB : SubOrSub.SUB;
-  const sources = await provider.fetchEpisodeSources(episodeId, undefined, mode);
-  return {
-    sources: sources.sources.map((s) => ({
-      url: s.url,
-      quality: s.quality || "default",
-      isM3U8: s.isM3U8 ?? false,
-    })),
-    subtitles: (sources.subtitles || []).map((s) => ({
-      url: s.url,
-      lang: s.lang || "Unknown",
-    })),
-    intro: sources.intro || null,
-    outro: sources.outro || null,
-  };
-}

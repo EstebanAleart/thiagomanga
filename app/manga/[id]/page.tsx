@@ -116,8 +116,14 @@ export default function MangaPage({ params }: MangaPageProps) {
 
   useEffect(() => {
     if (availableLanguages.length > 0 && !selectedLang) {
-      const preferred = ["es-la", "es", "en", "pt-br"].find((l) => availableLanguages.includes(l));
-      setSelectedLang(preferred || (availableLanguages[0] ?? null));
+      // Check saved preference first, then fall back to priority list
+      const saved = localStorage.getItem("preferred-lang");
+      if (saved && availableLanguages.includes(saved)) {
+        setSelectedLang(saved);
+      } else {
+        const preferred = ["en", "es-la", "es", "pt-br"].find((l) => availableLanguages.includes(l));
+        setSelectedLang(preferred || (availableLanguages[0] ?? null));
+      }
     }
   }, [availableLanguages.join(",")]);
 
@@ -279,7 +285,7 @@ export default function MangaPage({ params }: MangaPageProps) {
 
             {/* Genres */}
             <div className="flex flex-wrap gap-1 mb-4">
-              {(anilist?.genres ?? manga.tags).slice(0, 10).map((g) => (
+              {(anilist?.genres ?? manga?.tags ?? []).slice(0, 10).map((g) => (
                 <Badge key={g} variant="outline" className="text-xs">
                   <Tag className="h-3 w-3 mr-1" />
                   {g}
@@ -472,7 +478,7 @@ export default function MangaPage({ params }: MangaPageProps) {
                       key={lang}
                       size="sm"
                       variant={selectedLang === lang ? "default" : "outline"}
-                      onClick={() => setSelectedLang(lang!)}
+                      onClick={() => { setSelectedLang(lang!); localStorage.setItem("preferred-lang", lang!); }}
                       className="text-xs"
                     >
                       {LANGUAGE_FLAGS[lang!] || "🌐"} {LANGUAGE_LABELS[lang!] || lang}
@@ -498,7 +504,7 @@ export default function MangaPage({ params }: MangaPageProps) {
                   {displayedChapters.map((chapter) => (
                     <Link
                       key={chapter.id}
-                      href={`/read/${chapter.id}?mangaId=${id}`}
+                      href={`/read/${chapter.id}?mangaId=${id}&lang=${selectedLang || ""}`}
                       className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                     >
                       <div className="flex items-center gap-3">
