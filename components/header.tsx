@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Home, Heart, Newspaper, Library, Tv, Play } from "lucide-react";
+import { BookOpen, Home, Heart, Tv, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -46,18 +46,6 @@ export function Header() {
             <Link href="/watch" className="flex items-center gap-2">
               <Play className="h-4 w-4" />
               <span className="hidden sm:inline">Ver</span>
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/news" className="flex items-center gap-2">
-              <Newspaper className="h-4 w-4" />
-              <span className="hidden sm:inline">Enciclopedia</span>
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/comick" className="flex items-center gap-2">
-              <Library className="h-4 w-4" />
-              <span className="hidden sm:inline">ComicK</span>
             </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild>
