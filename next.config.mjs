@@ -16,6 +16,7 @@ const nextConfig = {
       },
     ],
   },
+  serverExternalPackages: ["got-scraping", "@consumet/extensions"],
 }
 
 export default nextConfig
