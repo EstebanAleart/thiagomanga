@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Home, Heart, Newspaper, Library } from "lucide-react";
+import { BookOpen, Home, Heart, Newspaper, Library, Tv } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -10,8 +10,9 @@ export function Header() {
 
   useEffect(() => {
     const update = () => {
-      const favs = JSON.parse(localStorage.getItem("manga-favorites") || "[]");
-      setFavCount(favs.length);
+      const mangaFavs = JSON.parse(localStorage.getItem("manga-favorites") || "[]");
+      const animeFavs = JSON.parse(localStorage.getItem("anime-favorites") || "[]");
+      setFavCount(mangaFavs.length + animeFavs.length);
     };
     update();
     window.addEventListener("storage", update);
@@ -36,6 +37,12 @@ export function Header() {
             </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild>
+            <Link href="/anime" className="flex items-center gap-2">
+              <Tv className="h-4 w-4" />
+              <span className="hidden sm:inline">Anime</span>
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
             <Link href="/news" className="flex items-center gap-2">
               <Newspaper className="h-4 w-4" />
               <span className="hidden sm:inline">Enciclopedia</span>
@@ -47,7 +54,6 @@ export function Header() {
               <span className="hidden sm:inline">ComicK</span>
             </Link>
           </Button>
-
           <Button variant="ghost" size="sm" asChild>
             <Link href="/favorites" className="flex items-center gap-2 relative">
               <Heart className="h-4 w-4" />
